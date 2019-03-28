@@ -22,6 +22,7 @@ clean:
 
 run: $(PROGRAM_NAME)
 	./$(PROGRAM_NAME)
+	feh out.png
 
 debug: $(PROGRAM_NAME)
 	gdb ./$(PROGRAM_NAME)
