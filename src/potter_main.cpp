@@ -36,17 +36,22 @@ struct Vector
 {
 	float x, y, z;
 
-	Vector operator* (float s)
+	Vector operator* (float s) const
 	{
 		return {x * s, y * s, z * s};
 	}
 
-	Vector operator- (Vector other)
+	Vector operator- () const
+	{
+		return {-x, -y, -z};
+	}
+
+	Vector operator- (Vector other) const
 	{
 		return {x - other.x, y - other.y, z - other.z};
 	}
 
-	Vector operator+ (Vector other)
+	Vector operator+ (Vector other) const
 	{
 		return {x + other.x, y + other.y, z + other.z};
 	}
@@ -134,12 +139,12 @@ int main(int c, const char **closest_point)
 	const Pixel RED = {200, 0, 20, 255};
 	const Pixel GREEN = {0, 200, 20, 255};
 	const Pixel BLUE = {20, 0, 200, 255};
-	const Vector SUNDIR = normalize(V3(1, 0.5, -1));
+	const Vector SUNDIR = normalize(V3(1, 0, 0));
 	Pixel colors[HEIGHT][WIDTH] = {};
 
 	Sphere objects[] = {
-		{V3(-20, 20, 50),	20, RED},
-		{V3(0, 0, 100),		20, GREEN},
+		{V3(-20, 0, 70),	20, RED},
+		{V3( 30, 0, 70),	20, GREEN},
 		{V3(50, 10, 170),	40, BLUE},
 	};
 
@@ -151,7 +156,10 @@ int main(int c, const char **closest_point)
 			Vector ray = normalize(V3(x - WIDTH / 2, y - HEIGHT / 2, DISTANCE_TO_CAMERA));
 			RayHit hit = send_ray(origin, ray, objects, num_objects);
 			if (hit.object) {
+				RayHit sun_hit = send_ray(hit.point - SUNDIR * 0.01f, -SUNDIR, objects, num_objects); // TODO: Sun doesn't work, negative camera values.
 				float lightness = MAX(-dot(SUNDIR, hit.normal), 0);
+				if (sun_hit.object)
+					lightness = 0;
 				colors[y][x] = hit.object->color * lightness;
 			} else {
 				colors[y][x] = SKY;
