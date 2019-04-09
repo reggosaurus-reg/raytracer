@@ -95,14 +95,17 @@ struct RayHit
 	Vector point;
 	Vector normal;
 	Sphere *object;
+	int object_id;
 };
 
-RayHit send_ray(Vector origin, Vector ray, Sphere objects[], int num_objects)
+RayHit send_ray(Vector origin, Vector ray, Sphere objects[], int num_objects, int ignore_id=-1)
 {
 	int object_id = -1;
 	Vector intersection_point;
 	Vector normal;
 	for (int k = 0; k < num_objects; k++) {
+		if (k == ignore_id) continue;
+
 		Sphere object = objects[k];
 		Vector closest_point = origin + ray * dot(ray, object.position - origin);
 		float dist_sqrd = length_sq(closest_point - object.position);
@@ -117,6 +120,9 @@ RayHit send_ray(Vector origin, Vector ray, Sphere objects[], int num_objects)
 			else
 				intersection = intersection_b;
 
+			// Is object in front of ray?
+			if (dot(ray, intersection) < 0) continue;
+
 			if (length(intersection) < length(intersection_point) 
 					|| object_id == -1) {
 				object_id = k;
@@ -127,15 +133,14 @@ RayHit send_ray(Vector origin, Vector ray, Sphere objects[], int num_objects)
 	}
 
 	if (object_id == -1)
-		return {{}, {}, 0};
+		return {{}, {}, 0, object_id};
 	else
-		return {intersection_point, normal, &objects[object_id]};
+		return {intersection_point, normal, &objects[object_id], object_id};
 }
 
 int main(int c, const char **closest_point)
 {
 	const Pixel SKY = {0, 0, 200, 255};
-
 	const Pixel RED = {200, 0, 20, 255};
 	const Pixel GREEN = {0, 200, 20, 255};
 	const Pixel BLUE = {20, 0, 200, 255};
@@ -156,7 +161,7 @@ int main(int c, const char **closest_point)
 			Vector ray = normalize(V3(x - WIDTH / 2, y - HEIGHT / 2, DISTANCE_TO_CAMERA));
 			RayHit hit = send_ray(origin, ray, objects, num_objects);
 			if (hit.object) {
-				RayHit sun_hit = send_ray(hit.point - SUNDIR * 0.01f, -SUNDIR, objects, num_objects); // TODO: Sun doesn't work, negative camera values.
+				RayHit sun_hit = send_ray(hit.point, -SUNDIR, objects, num_objects, hit.object_id);
 				float lightness = MAX(-dot(SUNDIR, hit.normal), 0);
 				if (sun_hit.object)
 					lightness = 0;
