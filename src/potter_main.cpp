@@ -82,20 +82,24 @@ struct Sphere
 {
 	Vector position;
 	float r;
+	Pixel color;
 };
 
 
 int main(int c, const char **closest_point)
 {
 	const Pixel SKY = {0, 0, 200, 255};
-	const Pixel SPHERE = {255, 0, 200, 255};
+
+	const Pixel RED = {200, 0, 20, 255};
+	const Pixel GREEN = {0, 200, 20, 255};
+	const Pixel BLUE = {20, 0, 200, 255};
 	const Vector SUNDIR = normalize(V3(1, 0.5, -1));
 	Pixel colors[HEIGHT][WIDTH] = {};
 
 	Sphere objects[] = {
-		{-20, 20, 50, 20},
-		{0, 0, 100, 20},
-		{10, 10, 170, 40},
+		{V3(-20, 20, 50),	20, RED},
+		{V3(0, 0, 100),		20, GREEN},
+		{V3(50, 10, 170),	40, BLUE},
 	};
 
 	int num_objects = sizeof(objects) / sizeof(objects[0]);
@@ -123,7 +127,7 @@ int main(int c, const char **closest_point)
 			if (min_position != -1) {
 				Vector intersection_normal = normalize(final_intersection - objects[min_position].position);
 				float lightness = MAX(-dot(SUNDIR, intersection_normal), 0);
-				colors[y][x] = SPHERE * lightness;
+				colors[y][x] = objects[min_position].color * lightness;
 			} else {
 				colors[y][x] = SKY;
 			}
