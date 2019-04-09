@@ -5,7 +5,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#define WIDTH 512
+#define WIDTH 512*2
 #define HEIGHT 512
 #define DISTANCE_TO_CAMERA 512
 #define OUTPUT_FILE "out.png"
@@ -45,6 +45,11 @@ struct Vector
 	{
 		return {x - other.x, y - other.y, z - other.z};
 	}
+
+	Vector operator+ (Vector other)
+	{
+		return {x + other.x, y + other.y, z + other.z};
+	}
 };
 
 inline
@@ -80,28 +85,47 @@ struct Sphere
 };
 
 
-int main(int c, const char **v)
+int main(int c, const char **closest_point)
 {
 	const Pixel SKY = {0, 0, 200, 255};
 	const Pixel SPHERE = {255, 0, 200, 255};
-	const Vector SUNDIR = normalize(V3(1, -0.5, 0.5));
-	Pixel colors[WIDTH][HEIGHT] = {};
+	const Vector SUNDIR = normalize(V3(1, 0.5, -1));
+	Pixel colors[HEIGHT][WIDTH] = {};
 
-	Sphere s = {0, 0, 100, 20};
-	float r_sq = s.r * s.r;
+	Sphere objects[] = {
+		{-20, 20, 50, 20},
+		{0, 0, 100, 20},
+		{10, 10, 170, 40},
+	};
 
-	for (int i = 0; i < WIDTH; i++) {
-		for (int j = 0; j < HEIGHT; j++) {
-			Vector d = normalize(V3(i - WIDTH / 2, j - HEIGHT / 2, DISTANCE_TO_CAMERA));
-			Vector v = d * dot(d, s.position);
-			float d_sq = length_sq(v - s.position);
-			if (d_sq <= r_sq) {
-				Vector p = v - d * sqrt(r_sq - d_sq);
-				Vector n = normalize(p - s.position);
-				float lightness = MAX(-dot(SUNDIR, n), 0);
-				colors[i][j] = SPHERE * lightness;
+	int num_objects = sizeof(objects) / sizeof(objects[0]);
+
+	for (int y = 0; y < HEIGHT; y++) {
+		for (int x = 0; x < WIDTH; x++) {
+			Vector ray = normalize(V3(x - WIDTH / 2, y - HEIGHT / 2, DISTANCE_TO_CAMERA));
+			int min_position = -1;
+			Vector final_intersection = {};
+			for (int k = 0; k < num_objects; k++) {
+				Sphere object = objects[k];
+				Vector closest_point = ray * dot(ray, object.position);
+				float distance_squared = length_sq(closest_point - object.position);
+				float radius_squared = object.r * object.r;
+				if (distance_squared <= radius_squared) {
+					Vector intersection_a = closest_point - ray * sqrt(radius_squared - distance_squared);
+					Vector intersection_b = closest_point + ray * sqrt(radius_squared - distance_squared);
+					Vector intersection = dot(ray, intersection_a) > dot(ray, intersection_b) ? intersection_a : intersection_b;
+					if (length(intersection) < length(final_intersection) || min_position == -1) {
+						final_intersection = intersection;
+						min_position = k;
+					}
+				}
+			}
+			if (min_position != -1) {
+				Vector intersection_normal = normalize(final_intersection - objects[min_position].position);
+				float lightness = MAX(-dot(SUNDIR, intersection_normal), 0);
+				colors[y][x] = SPHERE * lightness;
 			} else {
-				colors[i][j] = SKY;
+				colors[y][x] = SKY;
 			}
 		}
 	}
