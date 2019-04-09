@@ -83,30 +83,33 @@ Vector normalize(Vector a)
 	return a * (1.0f / length(a));
 }
 
-struct Sphere
+struct RayHit;
+struct Object
 {
-	Vector position;
-	float r;
+	/*
+	float roughness;
+	*/
 	Pixel color;
+
+	virtual void intersect(RayHit *hit, Vector origin, Vector ray) = 0;
 };
 
 struct RayHit
 {
 	Vector point;
 	Vector normal;
-	Sphere *object;
+	Object *object;
 	int object_id;
 };
 
-RayHit send_ray(Vector origin, Vector ray, Sphere objects[], int num_objects, int ignore_id=-1)
-{
-	int object_id = -1;
-	Vector intersection_point;
-	Vector normal;
-	for (int k = 0; k < num_objects; k++) {
-		if (k == ignore_id) continue;
 
-		Sphere object = objects[k];
+struct Sphere : public Object
+{
+	Vector position;
+	float r;
+
+	virtual void intersect(RayHit *hit, Vector origin, Vector ray) 
+	{
 		Vector closest_point = origin + ray * dot(ray, object.position - origin);
 		float dist_sqrd = length_sq(closest_point - object.position);
 		float radius_sqrd = object.r * object.r;
@@ -115,27 +118,80 @@ RayHit send_ray(Vector origin, Vector ray, Sphere objects[], int num_objects, in
 			Vector intersection_a = closest_point - ray * sqrt(q);
 			Vector intersection_b = closest_point + ray * sqrt(q);
 			Vector intersection;
+
+			// TODO: Extract this.
 			if (dot(ray, intersection_a) > dot(ray, intersection_b))
 				intersection = intersection_a;
 			else
 				intersection = intersection_b;
 
 			// Is object in front of ray?
-			if (dot(ray, intersection) < 0) continue;
-
-			if (length(intersection) < length(intersection_point) 
-					|| object_id == -1) {
-				object_id = k;
-				intersection_point = intersection;
-				normal = normalize(intersection - object.position);
+			if (dot(ray, intersection - origin) < 0) {
+				*hit = {};
+			} else if (length(intersection) < length(intersection_point)) {
+				*hit = {intersection, normalize(intersection - object.position), this};
 			}
 		}
 	}
+};
 
-	if (object_id == -1)
-		return {{}, {}, 0, object_id};
-	else
-		return {intersection_point, normal, &objects[object_id], object_id};
+Sphere make_sphere(float x, float y, float z, float r)
+{
+	return {x, y, z, r};
+}
+
+struct Plane : public Object
+{
+	Vector normal;
+	float d;
+
+	virtual void intersect(RayHit *hit, Vector origin, Vector ray) 
+	{
+		// TODO
+		*hit = {};
+	}
+};
+
+Plane make_plane(float x, float y, float z, float d)
+{
+	return {normalize(V3(x, y, z)), d};
+}
+
+
+Object make_object(Sphere sphere, float roughness, Pixel color)
+{
+	Object object;
+	object.sphere = sphere;
+	object.roughness = roughness;
+	object.color = color;
+	return object;
+}
+
+Object make_object(Plane plane, float roughness, Pixel color)
+{
+	Object object;
+	object.plane = plane;
+	object.roughness = roughness;
+	object.color = color;
+	return object;
+}
+
+RayHit send_ray(Vector origin, Vector ray, Object objects[], int num_objects, int ignore_id=-1)
+{
+	float closest_distance = 0;
+	RayHit closest_hit = {};
+	for (int k = 0; k < num_objects; k++) {
+		if (k == ignore_id) continue;
+
+		Object *object = &objects[k];
+		RayHit hit = objects->intersect(origin, ray);
+		hit.object_id = k;
+		float distance = dot(ray, hit.point - origin);
+		if (hit.object && 0 < distance && (!closest_hit.object || distance < closest_distance))
+			closest_hit = hit;
+	}
+
+	return closest_hit;
 }
 
 int main(int c, const char **closest_point)
@@ -144,13 +200,13 @@ int main(int c, const char **closest_point)
 	const Pixel RED = {200, 0, 20, 255};
 	const Pixel GREEN = {0, 200, 20, 255};
 	const Pixel BLUE = {20, 0, 200, 255};
-	const Vector SUNDIR = normalize(V3(1, 0, 0));
+	const Vector SUNDIR = normalize(V3(1, -0.3, 0));
 	Pixel colors[HEIGHT][WIDTH] = {};
 
-	Sphere objects[] = {
-		{V3(-20, 0, 70),	20, RED},
-		{V3( 30, 0, 70),	20, GREEN},
-		{V3(50, 10, 170),	40, BLUE},
+	Object objects[] = {
+		make_object(make_sphere(-20, 0, 70, 20), 0, RED),
+		make_object(make_sphere( 20, 0, 70, 20), 0, GREEN),
+		// {make_plane(0, 1, 0, 2),	  0, BLUE},
 	};
 
 	int num_objects = sizeof(objects) / sizeof(objects[0]);
