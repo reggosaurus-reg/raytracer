@@ -4,6 +4,9 @@ struct RayHit
 	Vector point;
 	Vector normal;
 	Object *object;
+
+	Pixel color;
+	float lightness;
 };
 
 struct Object
