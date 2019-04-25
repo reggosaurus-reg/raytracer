@@ -12,14 +12,14 @@
 #define HEIGHT 512
 #define DISTANCE_TO_CAMERA 512
 #define OUTPUT_FILE "out.png"
-const Pixel SKY = {200, 0, 200, 255};
-const Pixel RED = {200, 0, 20, 255};
-const Pixel GREEN = {0, 200, 20, 255};
-const Pixel BLUE = {20, 0, 200, 255};
+const Color SKY =	{0.8,	0,		0.8,	1.0};
+const Color RED =	{0.8,	0, 		0.1, 	1.0};
+const Color GREEN = {0,		0.8,	0.1, 	1.0};
+const Color BLUE =	{0.1,	0,		0.8, 	1.0};
 
 RayHit send_ray(int depth_left, Vector origin, Vector ray, Object *objects[], int num_objects, Object* ignore=NULL)
 {
-	if (!depth_left) return {};
+	if (!depth_left) return empty_hit();
 
 	// Find the hit for THIS ray.
 	float closest_distance = 0;
@@ -85,14 +85,19 @@ int main(int argc, const char **argv)
 
 	int num_objects = sizeof(objects) / sizeof(objects[0]);
 
+	// Send rays for each pixel in the image
 	for (int y = 0; y < HEIGHT; y++) {
 		for (int x = 0; x < WIDTH; x++) {
-			Pixel color;
-			float lightness;
-			Vector origin = {};
-			Vector ray = normalize(V3(x - WIDTH / 2, y - HEIGHT / 2, DISTANCE_TO_CAMERA));
-			RayHit hit = send_ray(100, origin, ray, objects, num_objects);
-			colors[y][x] = hit.color * hit.lightness;
+			Color result_color = {};
+			const int samples = 5;
+			for (int sample = 0; sample < samples; sample++) {
+				Vector origin = {};
+				Vector ray = normalize(V3(x - WIDTH / 2, y - HEIGHT / 2, DISTANCE_TO_CAMERA));
+				RayHit hit = send_ray(100, origin, ray, objects, num_objects);
+				result_color += hit.color * hit.lightness;
+			}
+			colors[y][x] = to_pixel(result_color / (float) samples); 
+			colors[y][x].alpha = 255;
 		}
 	}
 

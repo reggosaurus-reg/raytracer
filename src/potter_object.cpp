@@ -5,16 +5,23 @@ struct RayHit
 	Vector normal;
 	Object *object;
 
-	Pixel color;
+	Color color;
 	float lightness;
 };
+
+RayHit empty_hit()
+{
+	RayHit hit = {};
+	hit.color = {0.0f, 0.0f, 0.0f, 1.0f};
+	return hit;
+}
 
 struct Object
 {
 	/*
 	float roughness;
 	*/
-	Pixel color;
+	Color color;
 
 	virtual RayHit intersect(Vector origin, Vector ray) = 0;
 };

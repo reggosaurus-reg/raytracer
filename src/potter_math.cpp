@@ -1,5 +1,7 @@
 
 #define MAX(a, b) (a > b ? a : b)
+#define MIN(a, b) (a < b ? a : b)
+#define CLAMP(min, max, v) (MAX(MIN(v, max), min))
 
 struct Pixel
 {
@@ -7,8 +9,6 @@ struct Pixel
 	uint8_t green;
 	uint8_t blue;
 	uint8_t alpha;
-
-	Pixel operator* (float s) const;
 };
 
 Pixel P(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
@@ -16,20 +16,67 @@ Pixel P(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 	return {r, g, b, a};
 }
 
-Pixel Pixel::operator* (float s) const
+struct Color
 {
-	return P(red * s, green * s, blue * s, alpha);
+	union
+	{
+		struct
+		{
+			float r, g, b, a;
+		};
+		struct
+		{
+			float red, green, blue, alpha;
+		};
+	};
+
+
+	Color operator* (float s) const;
+	Color operator/ (float s) const;
+	Color operator+= (Color p);
+};
+
+Color C(float r, float g, float b, float a)
+{
+	return {r, g, b, a};
 }
 
-Pixel mix(Pixel a, Pixel b, float lerp)
+Pixel to_pixel(Color color)
 {
 	return P(
+			(uint8_t) CLAMP(0.0, 255.0, color.r * 255),
+			(uint8_t) CLAMP(0.0, 255.0, color.g * 255),
+			(uint8_t) CLAMP(0.0, 255.0, color.b * 255) ,
+			(uint8_t) CLAMP(0.0, 255.0, color.a * 255) );
+}
+
+Color Color::operator* (float s) const
+{
+	return C(r * s, g * s, b * s, a * s);
+}
+
+Color Color::operator/ (float s) const
+{
+	return C(r / s, g / s, b / s, a / s);
+}
+
+Color Color::operator+= (Color p)
+{
+	r += p.r;
+	g += p.g;
+	b += p.b;
+	a += p.a;
+	return *this;
+}
+
+Color mix(Color a, Color b, float lerp)
+{
+	return C(
 		a.red * lerp + b.red * (1.0f - lerp),
 		a.green * lerp + b.green * (1.0f - lerp),
 		a.blue * lerp + b.blue * (1.0f - lerp),
 		a.alpha * lerp + b.alpha * (1.0f - lerp));
 }
-
 
 struct Vector
 {
