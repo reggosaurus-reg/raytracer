@@ -1,6 +1,7 @@
 CXX = clang++
 #CXX = g++
-DEBUG_FLAGS = -ggdb -O0 -DDEBUG
+#DEBUG_FLAGS = -ggdb -O0 -DDEBUG
+DEBUG_FLAGS = -O3
 WARNINGS = -Wall -Wno-unknown-warning-option -Wno-unused-but-set-variable -Wno-unused-variable -Wno-missing-braces 
 FLAGS = $(WARNINGS) -std=c++14 -Iinc $(DEBUG_FLAGS)
 PROGRAM_NAME = bin/potter
@@ -15,7 +16,7 @@ default: $(PROGRAM_NAME)
 
 $(PROGRAM_NAME): $(SOURCE_FILES) $(HEADERS)
 	mkdir -p bin
-	$(CXX) $(FLAGS) $(SOURCE_FILE) -o $(PROGRAM_NAME)
+	$(CXX) $(FLAGS) $(SOURCE_FILE) -o $(PROGRAM_NAME) -pthread
 
 clean:
 	rm $(PROGRAM_NAME)

@@ -18,9 +18,7 @@ RayHit empty_hit()
 
 struct Object
 {
-	/*
 	float roughness;
-	*/
 	Color color;
 
 	virtual RayHit intersect(Vector origin, Vector ray) = 0;
