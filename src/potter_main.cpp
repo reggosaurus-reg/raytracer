@@ -9,6 +9,7 @@
 
 #include "potter_math.cpp"
 #include "potter_object.cpp"
+#include "obj_parser.cpp"
 
 #define WIDTH 512*2
 #define HEIGHT 512
@@ -117,7 +118,7 @@ void *work(void *arguments)
 			Color result_color = {};
 			// TODO: Multi thread, it's like really slow...
 			const int bounces = 20;
-			const int samples = 20;
+			const int samples = 50;
 			for (int sample = 0; sample < samples; sample++) {
 				Vector origin = {};
 				Vector ray = normalize(V3(x - WIDTH / 2, y - HEIGHT / 2, DISTANCE_TO_CAMERA));
@@ -134,15 +135,36 @@ void *work(void *arguments)
 
 int main(int argc, const char **argv)
 {
+	{
+		const char *string = "123.456";
+		int l = 0;
+		printf("%f, %s\n", read_float(string, &l), string);
+	}
+	{
+		const char *string = "0.1";
+		int l = 0;
+		printf("%f, %s\n", read_float(string, &l), string);
+	}
+	{
+		const char *string = "-1";
+		int l = 0;
+		printf("%f, %s\n", read_float(string, &l), string);
+	}
+	{
+		const char *string = "0.01";
+		int l = 0;
+		printf("%f, %s\n", read_float(string, &l), string);
+	}
+	return 0;
 	// const Vector SUNDIR = normalize(V3(1, 1, 1));
 	Pixel *colors = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
 
 	Sphere a = make_sphere(-20, -5, 130, 20); 
 	a.color = RED;
-	a.roughness = 0.1;
+	a.roughness = 0.9;
 	Sphere b = make_sphere( 20, -23, 130, 20);
 	b.color = GREEN;
-	b.roughness = 0.5;
+	b.roughness = 0.0;
 	Plane c = make_plane(0, 1, 0, 10);
 	c.color = BLUE;
 	c.roughness = 1.0;
