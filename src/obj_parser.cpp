@@ -7,16 +7,9 @@ struct Vertex
 	Vector normal;
 };
 
-struct Mesh
-{
-	// Every triplet of vertices is a face, 
-	// which is assumed when we render.
-	Vertex *vertices;
-};
-
 void read_until(const char *text, int *read_head, char c)
 {
-	while (text[*read_head] == c)
+	while (text[*read_head] != c && text[*read_head])
 		(*read_head)++;
 }
 
@@ -42,14 +35,16 @@ int read_int(const char *text, int *read_head)
 
 	while (true)
 	{
-		char c = text[head++];
+		char c = text[head];
 		if ('0' <= c && c <= '9') {
 			integer_part *= 10;
 			integer_part += c - '0';
+			head++;
 			continue;
 		}
 		break;
 	}
+	*read_head = head;
 	return sign * integer_part;
 }
 
@@ -111,7 +106,7 @@ float read_float(const char *text, int *read_head)
 // TODO: List
 #define List std::vector
 
-Mesh read_obj(const char *path)
+List<Vertex> read_obj(const char *path)
 {
 	FILE *file = fopen(path, "r");
 	size_t line_length = 0;
@@ -120,6 +115,9 @@ Mesh read_obj(const char *path)
 	List<Vector> positions;
 	List<Vector> normals;
 	List<Vertex> vertices;
+
+	if (!file) 
+		return vertices;
 
 	while (getline(&line, &line_length, file) != -1) 
 	{
@@ -150,6 +148,7 @@ Mesh read_obj(const char *path)
 			read_head += 2;
 			for (int i = 0; i < 3; i++) {
 				int p = read_int(line, &read_head);
+				read_head += 1;
 				read_until(line, &read_head, '/');
 				read_head += 1;
 				int n = read_int(line, &read_head);
@@ -159,6 +158,7 @@ Mesh read_obj(const char *path)
 	}
 	free(line);
 	assert(vertices.size() != 0);
-	assert(vertices.size() % 3);
+	assert(vertices.size() % 3 == 0);
+	return vertices;
 }
 

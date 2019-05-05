@@ -8,8 +8,9 @@
 #include "stb_image_write.h"
 
 #include "potter_math.cpp"
-#include "potter_object.cpp"
 #include "obj_parser.cpp"
+
+#include "potter_object.cpp"
 
 #define WIDTH 512*2
 #define HEIGHT 512
@@ -23,6 +24,7 @@ const Color RED =	{0.8,	0, 		0.1, 	1.0};
 const Color GREEN = {0,		0.8,	0.1, 	1.0};
 const Color BLUE =	{0.1,	0,		0.8, 	1.0};
 
+// TODO: Drag this out into a separate file, it's getting big.
 RayHit send_ray(int depth_left, Vector origin, Vector ray, Object *objects[], int num_objects, Object* ignore=NULL)
 {
 	if (!depth_left) return empty_hit();
@@ -77,12 +79,14 @@ RayHit send_ray(int depth_left, Vector origin, Vector ray, Object *objects[], in
 		const float COLOR_WEIGHT = 0.5f; 
 		const float LIGHT_KEPT = 0.8f; 
 		// Mix colors
+		// TODO: Energy conservation is not met here, which is why the lighting is weird.
 		closest_hit.color = mix(
 				closest_hit.object->color, 
 				reflection_hit.color, 
 				COLOR_WEIGHT);
 		closest_hit.lightness = reflection_hit.lightness * LIGHT_KEPT;
 	} else {
+		// TODO: Energy conservation is not met here, which is why the lighting is weird.
 		closest_hit.color = SKY;
 		closest_hit.lightness = 1.0;
 	}
@@ -117,8 +121,8 @@ void *work(void *arguments)
 		for (int x = 0; x < WIDTH; x++) {
 			Color result_color = {};
 			// TODO: Multi thread, it's like really slow...
-			const int bounces = 20;
-			const int samples = 50;
+			const int bounces = 4;
+			const int samples = 3;
 			for (int sample = 0; sample < samples; sample++) {
 				Vector origin = {};
 				Vector ray = normalize(V3(x - WIDTH / 2, y - HEIGHT / 2, DISTANCE_TO_CAMERA));
@@ -135,34 +139,16 @@ void *work(void *arguments)
 
 int main(int argc, const char **argv)
 {
-	{
-		const char *string = "123.456";
-		int l = 0;
-		printf("%f, %s\n", read_float(string, &l), string);
-	}
-	{
-		const char *string = "0.1";
-		int l = 0;
-		printf("%f, %s\n", read_float(string, &l), string);
-	}
-	{
-		const char *string = "-1";
-		int l = 0;
-		printf("%f, %s\n", read_float(string, &l), string);
-	}
-	{
-		const char *string = "0.01";
-		int l = 0;
-		printf("%f, %s\n", read_float(string, &l), string);
-	}
-	return 0;
+	List<Vertex> cube_mesh = read_obj("res/cube.obj");		
+	
 	// const Vector SUNDIR = normalize(V3(1, 1, 1));
 	Pixel *colors = (Pixel *) malloc(sizeof(Pixel) * WIDTH * HEIGHT);
 
+	// We need some form of material file.
 	Sphere a = make_sphere(-20, -5, 130, 20); 
 	a.color = RED;
 	a.roughness = 0.9;
-	Sphere b = make_sphere( 20, -23, 130, 20);
+	Mesh b = make_mesh(&cube_mesh[0], cube_mesh.size(), V3(10, -15, 50));
 	b.color = GREEN;
 	b.roughness = 0.0;
 	Plane c = make_plane(0, 1, 0, 10);
@@ -176,6 +162,9 @@ int main(int argc, const char **argv)
 	int num_objects = sizeof(objects) / sizeof(objects[0]);
 
 	// Initialize threads.
+
+	// TODO: Add in a custom timer so we don't have to run "time", since we'll 
+	// always want to know the time it took.
 
 	// Send rays for each pixel in the image
 	RenderArguments arguments = {colors, objects, num_objects};

@@ -86,3 +86,80 @@ Plane make_plane(float x, float y, float z, float d)
 	return p;
 }
 
+struct Mesh : public Object
+{
+	Vector position;
+	// TODO: Rotation, Scale
+
+	float radius_sqrd;
+
+	int num_vertices;
+	Vertex *vertices;
+
+	virtual RayHit intersect(Vector global_origin, Vector ray)
+	{
+		Vector point; 
+		Vector normal;
+		Vector origin = global_origin - position;
+
+		// If we're going in the wrong direction, ignore ray.
+		if (dot(ray, position) < 0) return {};
+
+		// If we're outside the bounding sphere, ignore ray.
+		Vector closest_point = origin + ray * dot(ray, -origin);
+		float dist_sqrd = length_sq(closest_point);
+		if (dist_sqrd > radius_sqrd) return {};
+
+		RayHit closest_hit = {};
+		float closest_distance = 0;
+		for (int i = 0; i < num_vertices; i += 3)
+		{
+			Vector a = vertices[i + 0].position;
+			Vector b = vertices[i + 1].position;
+			Vector c = vertices[i + 2].position;
+			Vector normal = -vertices[i + 0].normal;
+			float distance_from_origin = dot(a, normal) - dot(origin, normal);
+			point = origin + ray * (distance_from_origin / dot(ray, normal));
+			
+			// is_point_in_triangle?
+			{
+				Vector right_vector;
+				right_vector = cross(b - a, normal);
+				if (dot((point - a), right_vector) < 0) continue;
+				right_vector = cross(c - b, normal);
+				if (dot((point - b), right_vector) < 0) continue;
+				right_vector = cross(a - c, normal);
+				<f (dot((point - c), right_vector) < 0) continue;
+				
+				Vector global_point = point + position;
+				RayHit hit = {global_point, normal, this};
+
+				if (0 < distance_from_origin && (!closest_hit.object || distance_from_origin < closest_distance))
+				{
+					closest_distance = distance_from_origin;
+					closest_hit = hit;
+				}
+			}
+		}
+		return closest_hit;
+	}
+};
+
+Mesh make_mesh(Vertex *vertices, int num_vertices, Vector position)
+{
+	Mesh m;
+	m.vertices = vertices;
+	m.num_vertices = num_vertices;
+	m.position = position;
+
+	float distance_squared = length_sq(vertices[0].position);
+	for (int i = 1; i < num_vertices; i++)
+	{
+		distance_squared = MAX(length_sq(vertices[i].position), distance_squared);
+	}
+	m.radius_sqrd = distance_squared;
+	return m;
+}
+
+
+

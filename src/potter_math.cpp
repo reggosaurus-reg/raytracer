@@ -1,6 +1,6 @@
 
-#define MAX(a, b) (a > b ? a : b)
-#define MIN(a, b) (a < b ? a : b)
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define CLAMP(min, max, v) (MAX(MIN(v, max), min))
 
 struct Pixel
@@ -113,6 +113,14 @@ Vector V3(float x, float y, float z)
 float dot(Vector a, Vector b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+Vector cross(Vector a, Vector b)
+{
+	return {
+		a.y * b.z - a.z * b.y, 
+		a.z * b.x - a.x * b.z, 
+		a.x * b.y - a.y * b.x};
 }
 
 Vector reflect(Vector v, Vector n)
