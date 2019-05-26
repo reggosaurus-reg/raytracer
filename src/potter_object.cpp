@@ -19,6 +19,7 @@ RayHit empty_hit()
 struct Object
 {
 	float roughness;
+	float emission;
 	Color color;
 
 	virtual RayHit intersect(Vector origin, Vector ray) = 0;
@@ -129,7 +130,7 @@ struct Mesh : public Object
 				right_vector = cross(c - b, normal);
 				if (dot((point - b), right_vector) < 0) continue;
 				right_vector = cross(a - c, normal);
-				<f (dot((point - c), right_vector) < 0) continue;
+				if (dot((point - c), right_vector) < 0) continue;
 				
 				Vector global_point = point + position;
 				RayHit hit = {global_point, normal, this};

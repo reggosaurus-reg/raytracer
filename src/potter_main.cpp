@@ -84,11 +84,12 @@ RayHit send_ray(int depth_left, Vector origin, Vector ray, Object *objects[], in
 				closest_hit.object->color, 
 				reflection_hit.color, 
 				COLOR_WEIGHT);
-		closest_hit.lightness = reflection_hit.lightness * LIGHT_KEPT;
+		closest_hit.lightness = reflection_hit.lightness * LIGHT_KEPT 
+			+ closest_hit.object->emission;
 	} else {
 		// TODO: Energy conservation is not met here, which is why the lighting is weird.
 		closest_hit.color = SKY;
-		closest_hit.lightness = 1.0;
+		closest_hit.lightness = 0.0;
 	}
 
 	return closest_hit;
@@ -120,9 +121,8 @@ void *work(void *arguments)
 		pthread_mutex_unlock(&next_row_lock);
 		for (int x = 0; x < WIDTH; x++) {
 			Color result_color = {};
-			// TODO: Multi thread, it's like really slow...
-			const int bounces = 4;
-			const int samples = 3;
+			const int bounces = 5;
+			const int samples = 20;
 			for (int sample = 0; sample < samples; sample++) {
 				Vector origin = {};
 				Vector ray = normalize(V3(x - WIDTH / 2, y - HEIGHT / 2, DISTANCE_TO_CAMERA));
@@ -148,9 +148,10 @@ int main(int argc, const char **argv)
 	Sphere a = make_sphere(-20, -5, 130, 20); 
 	a.color = RED;
 	a.roughness = 0.9;
-	Mesh b = make_mesh(&cube_mesh[0], cube_mesh.size(), V3(10, -15, 50));
+	Mesh b = make_mesh(&cube_mesh[0], cube_mesh.size(), V3(10, -15, 130));
 	b.color = GREEN;
 	b.roughness = 0.0;
+	b.emission = 10.0;
 	Plane c = make_plane(0, 1, 0, 10);
 	c.color = BLUE;
 	c.roughness = 1.0;

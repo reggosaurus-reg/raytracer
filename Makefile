@@ -1,7 +1,6 @@
 CXX = clang++
 #CXX = g++
-#DEBUG_FLAGS = -ggdb -O0 -DDEBUG
-DEBUG_FLAGS = -O3
+DEBUG_FLAGS = -ggdb -O0 -DDEBUG
 WARNINGS = -Wall -Wno-unknown-warning-option -Wno-unused-but-set-variable -Wno-unused-variable -Wno-missing-braces 
 FLAGS = $(WARNINGS) -std=c++14 -Iinc $(DEBUG_FLAGS)
 PROGRAM_NAME = bin/potter
